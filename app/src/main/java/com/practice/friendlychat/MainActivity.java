@@ -36,6 +36,14 @@ public class MainActivity extends AppCompatActivity {
 
     private String mUsername;
 
+    private FirebaseDatabase mFirebaseDatabase;
+    private DatabaseReference mMessagesDatabaseReference;
+    private ChildEventListener mChildEventListener;
+    private FirebaseAuth mFirebaseAuth;
+    private FirebaseAuth.AuthStateListener mAuthStateListener;
+    private static final int RC_SIGN_IN = 123;
+    private static boolean s_persistenceInitialized = false;
+
 
 
 
@@ -51,6 +59,16 @@ public class MainActivity extends AppCompatActivity {
         mPhotoPickerButton = (ImageButton) findViewById(R.id.photoPickerButton);
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendButton = (Button) findViewById(R.id.sendButton);
+
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        if (!s_persistenceInitialized) {
+            mFirebaseDatabase.setPersistenceEnabled(true);
+            s_persistenceInitialized = true;
+        }
+
+        mMessagesDatabaseReference = mFirebaseDatabase.getReference().child("messages");
 
         // Initialize message ListView and its adapter
         List<FriendlyMessage> friendlyMessages = new ArrayList<>();
@@ -94,12 +112,36 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // TODO: Send messages on click
+                FriendlyMessage friendlyMessage = new FriendlyMessage(mMessageEditText.getText().toString(), mUsername, null);
+                mMessagesDatabaseReference.push().setValue(friendlyMessage);
                // Clear input box
                 mMessageEditText.setText("");
             }
         });
 
+        mChildEventListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
+                mMessageAdapter.add(friendlyMessage);
+            }
 
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+            }
+        };
 
     }
 
