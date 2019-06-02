@@ -143,6 +143,29 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
+        mMessagesDatabaseReference.addChildEventListener(mChildEventListener);
+        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+                    //user is signed in
+                    Toast.makeText(MainActivity.this, "You're now signed in. welcome to friendlyChat!", Toast.LENGTH_SHORT).show();
+                } else {
+                    //user is signed out
+                    startActivityForResult(
+                            AuthUI.getInstance()
+                                    .createSignInIntentBuilder()
+                                    .setIsSmartLockEnabled(false)
+                                    .setAvailableProviders(Arrays.asList(
+                                            new AuthUI.IdpConfig.GoogleBuilder().build(),
+                                            new AuthUI.IdpConfig.EmailBuilder().build()))
+                                    .build(),
+                            RC_SIGN_IN);
+                }
+
+            }
+        };
     }
 
     @Override
@@ -157,5 +180,16 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mFirebaseAuth.addAuthStateListener(mAuthStateListener);
+    }
 
 }
